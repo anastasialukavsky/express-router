@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const User = require('../models/User');
+const { check, validationResult } = require('express-validator');
 
 router.get('/', async (req, res) => {
   try {
@@ -9,7 +10,7 @@ router.get('/', async (req, res) => {
     res.status(200).json(users);
   } catch (e) {
     // console.error(e);
-     res.status(500).send('Internal server error');
+    res.status(500).send('Internal server error');
   }
 });
 
@@ -27,35 +28,48 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.post(
+  '/',
+  [check('name').trim().notEmpty().withMessage('Name cannot be empty')],
+  [check('user').trim().notEmpty().withMessage('Age cannot be empty')],
+  async (req, res) => {
+    const errors = validationResult(req);
 
-router.post('/', async (req, res) => {
-  try {
-    const newUser = await User.create(req.body);
-    console.log();
+    try {
+      if (!errors.isEmpty())
+        return res.status(400).json({ error: errors.array() });
+      const newUser = await User.create(req.body);
 
-    if (!newUser) res.status(500).send('Unable to create user');
+      if (!newUser) res.status(500).send('Unable to create user');
 
-    res.status(201).json(newUser);
-  } catch (e) {
-    // console.error(e);
-     res.status(500).send('Internal server error');
+      res.status(201).json(newUser);
+    } catch (e) {
+      // console.error(e);
+      res.status(500).send('Internal server error');
+    }
   }
-});
+);
 
-router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = await User.findByPk(id);
-    if (!user) res.status(404).send('User not found');
+router.put(
+  '/:id',
+  [check('name').trim().notEmpty().withMessage('Name cannot be empty')],
+  [check('user').trim().notEmpty().withMessage('Age cannot be empty')],
+  async (req, res) => {
+    try {
 
-    const updateUser = await user.update(req.body);
-    res.status(200).json(updateUser);
-  } catch (e) {
-    // console.error(e);
-     res.status(500).send('Internal server error');
+      if (!errors.isEmpty())
+        return res.status(400).json({ error: errors.array() });
+      const { id } = req.params;
+      const user = await User.findByPk(id);
+      if (!user) res.status(404).send('User not found');
+
+      const updateUser = await user.update(req.body);
+      res.status(200).json(updateUser);
+    } catch (e) {
+      res.status(500).send('Internal server error');
+    }
   }
-});
-
+);
 
 router.delete('/:id', async (req, res) => {
   try {
